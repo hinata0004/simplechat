@@ -32,7 +32,7 @@ import json
          }
  
          # エンドポイントURL
-         endpoint_url = "https://4ab4-34-124-152-174.ngrok-free.app/generate"
+         endpoint_url = "https://c4dc-34-141-255-142.ngrok-free.app/"
  
          # リクエストを送信
          try:
