@@ -19,8 +19,18 @@ def lambda_handler(event, context):
         # リクエストボディの解析
         body = json.loads(event['body'])
         message = body['message']
+        conversation_history = body.get('conversationHistory', [])
 
         print("Processing message:", message)
+
+        # 会話履歴を使用
+        messages = conversation_history.copy()
+
+        # ユーザーメッセージを追加
+        messages.append({
+            "role": "user",
+            "content": message
+        })
 
         # リクエストペイロードを構築
         request_payload = {
@@ -32,16 +42,17 @@ def lambda_handler(event, context):
         }
 
         # エンドポイントURL
-        endpoint_url = "https://c4dc-34-141-255-142.ngrok-free.app/"
+        endpoint_url = "https://c4dc-34-141-255-142.ngrok-free.app/generate"
+
+        req = urllib.request.Request(
+            url=endpoint_url,
+            data=json.dumps(request_payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
 
         # リクエストを送信
         try:
-            req = urllib.request.Request(
-                url=endpoint_url,
-                data=json.dumps(request_payload).encode('utf-8'),
-                headers={'Content-Type': 'application/json'},
-                method='POST'
-            )
             with urllib.request.urlopen(req) as response:
                 response_body = json.loads(response.read().decode('utf-8'))
                 print("Response from external API:", json.dumps(response_body, default=str))
@@ -57,6 +68,12 @@ def lambda_handler(event, context):
         # アシスタントの応答を取得
         assistant_response = response_body['generated_text']
 
+        # アシスタントの応答を会話履歴に追加
+        messages.append({
+            "role": "assistant",
+            "content": response_body['generated_text']
+        })
+
         # 成功レスポンスの返却
         return {
             "statusCode": 200,
@@ -68,7 +85,8 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({
                 "success": True,
-                "response": assistant_response
+                "response": assistant_response,
+                "conversationHistory": messages
             })
         }
 
@@ -87,3 +105,4 @@ def lambda_handler(event, context):
                 "success": False,
                 "error": str(error)
             })
+        }
